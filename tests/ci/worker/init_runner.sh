@@ -64,7 +64,12 @@ terminate-delayed() {
 terminate-and-exit() {
   echo "Going to terminate the runner's instance"
   INSTANCE_ID=$(ec2metadata --instance-id)
+  if [ "$1" ]; then
+    echo "Stopping the runner with PID $1"
+    kill -SIGINT "$1"
+  fi
   aws ec2 terminate-instances --instance-ids "$INSTANCE_ID"
+  exit 0
 }
 
 check-terminating-metadata() {
@@ -79,7 +84,7 @@ check-terminating-metadata() {
       # To not shutdown everything at once, use the 66% to survive
       if (( $((RANDOM % 3)) == 0 )); then
         echo 'The instance is older than 30m and won the roulette'
-        terminate-and-exit
+        terminate-and-exit "$1"
       fi
       echo 'The instance is older than 30m, but is not chosen for rebalance'
     else
@@ -99,7 +104,7 @@ check-terminating-metadata() {
         --instance-id "$INSTANCE_ID"
     done
     echo 'The runner is marked as "Terminated" by the autoscaling group, we are terminating'
-    terminate-and-exit
+    terminate-and-exit "$1"
   fi
 }
 EOF
@@ -189,7 +194,7 @@ while true; do
             echo "The runner is launched $RUNNER_AGE seconds ago and still doesn't have launched Runner.Worker"
             if (( 60 < RUNNER_AGE )); then
                 echo "Check if the instance should tear down"
-                check-terminating-metadata
+                check-terminating-metadata "$runner_pid"
             fi
         fi
         sleep 5
