@@ -224,6 +224,11 @@ while true; do
             if (( 60 < RUNNER_AGE )); then
                 echo "Check if the instance should tear down"
                 if ! no_terminating_metadata; then
+                    # Another check if the worker still didn't start
+                    if pgrep Runner.Worker; then
+                        echo "During the metadata check the job was assigned, continue"
+                        continue
+                    fi
                     kill -9 "$runner_pid"
                     sudo -u ubuntu ./config.sh remove --token "$(get_runner_token)"
                     terminate_on_event
