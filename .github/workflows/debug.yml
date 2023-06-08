@@ -15,4 +15,6 @@ jobs:
       matrix:
         versions: [0, 1, 2]
     steps:
-    - uses: hmarr/debug-action@a701ed95a46e6f2fb0df25e1a558c16356fae35a
+    - name: sleep
+      run: |
+        sleep 30
